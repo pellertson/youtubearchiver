@@ -1,0 +1,78 @@
+#!/usr/bin/env python3
+
+import argparse
+import youtube_dl
+
+
+def get_parser():
+	parser = argparse.ArgumentParser(
+		description="A simple command for archiving a YouTube channel.",
+		epilog="By default, nothing is printed to stdout except for any error messages. " +
+			"This command grabs the highest quality video, " +
+			"the description and english subtitles by default. " +
+			"Refer to the options below to see about changing the " +
+			"behavior of the program.")
+
+	parser.add_argument('channel',
+		metavar='YT_CHANNEL',
+		type=str,
+		nargs=1,
+		help='Full URLs to the YouTube channel that you want archived.')
+
+	parser.add_argument('-i', '--in-order',
+		action='store_true',
+		help='Archives the videos from newest to oldest, rather than the default random order')
+
+	parser.add_argument('-t', '--thumbnail',
+		action='store_true',
+		help='Archives the thumbnail. Off by default.')
+
+	parser.add_argument('-s', '--subtitle-langs',
+		default=['en'],
+		action='append',
+		help="Archives the subtitles, if available. " +
+			"Downloads the english subtitles by default. " +
+			"You can provide whatever languages are " +
+			"available when you run \"youtube-dl --sub-lang «VIDEO»\".")
+
+	return parser
+
+
+class MyLogger(object):
+	def debug(self, msg):
+		pass
+
+	def warning(self, msg):
+		#print(msg)
+		pass
+
+	def error(self, msg):
+		print(msg)
+
+
+def main():
+	parser = get_parser()
+	# i would like to access these items like a regular dictionary
+	args = vars(parser.parse_args())
+
+	ytdl_opts = {
+		"logger": MyLogger(),
+		"output": '%(upload_date)s_%(title)s.%(ext)s',
+		"writesubtitles": True,
+		#"subtitleslangs": list(set(args["subtitle_langs"])),
+		"subtitleslangs": set(args["subtitle_langs"]),
+		"writethumbnail": args["thumbnail"],
+		"restrictfilenames": True,
+		"playlistrandom": not args["in_order"],
+		# only here for testing
+		"skip_download": True,
+		"no_color": True,
+	}
+
+	with youtube_dl.YoutubeDL(ytdl_opts) as ytdl:
+		ytdl.download(args["channel"])
+
+if __name__ == '__main__':
+	main()
+
+
